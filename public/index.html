@@ -716,8 +716,8 @@
     updatePinnedBadge();
     renderTableHeader();
     fetchCurrentData();
-    setInterval(fetchCurrentData, 5000);
-    setInterval(tickLiveScore, 1000);
+    setInterval(fetchCurrentData, 3000); // Fast server poll (3s)
+    setInterval(tickLiveScore, 1000);   // Live tick every 1000ms (1s)
   </script>
 </body>
 </html>

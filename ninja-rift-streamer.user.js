@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Ninja Rift Auto Streamer (Clans & Arena)
+// @name         Ninja Rift Turbo Streamer (Clans & Arena)
 // @namespace    http://tampermonkey.net/
-// @version      3.0
-// @description  Automatically streams live clan and arena rankings to localhost tracker
+// @version      3.5
+// @description  Turbo streams live clan (5s) and arena (10s) rankings to localhost tracker
 // @author       Catologist
 // @match        https://playninjarift.com/*
 // @grant        GM_xmlhttpRequest
@@ -13,7 +13,7 @@
 (function() {
     'use strict';
 
-    console.log('[Ninja Rift Auto Streamer v3.0] Initialized and monitoring rankings...');
+    console.log('[Ninja Rift Turbo Streamer v3.5] Active! Clan sync: 5s | Arena sync: 10s');
 
     function sendToLocal(endpoint, payload) {
         if (typeof GM_xmlhttpRequest !== 'undefined') {
@@ -22,18 +22,18 @@
                 url: `http://localhost:3000${endpoint}`,
                 headers: { 'Content-Type': 'application/json' },
                 data: JSON.stringify(payload),
-                onload: () => console.log(`[Streamer] Successfully sent ${endpoint} payload`)
+                onload: () => console.log(`[Turbo Streamer] Sent ${endpoint}`)
             });
         } else {
             fetch(`http://localhost:3000${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
-            }).then(() => console.log(`[Streamer] Sent ${endpoint} payload`)).catch(() => {});
+            }).then(() => console.log(`[Turbo Streamer] Sent ${endpoint}`)).catch(() => {});
         }
     }
 
-    // 1. Clan Rankings Sync (Runs every 15s)
+    // 1. Clan Rankings Turbo Sync (Every 5 seconds)
     async function syncClans() {
         try {
             const res = await window.fetch('/api/clan_ranking_website.php');
@@ -48,7 +48,7 @@
         }
     }
 
-    // 2. Arena Rankings Sync across all 5 Villages (Runs every 30s)
+    // 2. Arena Rankings Sync across all 5 Villages (Every 10 seconds)
     async function syncVillages() {
         for (let vid = 1; vid <= 5; vid++) {
             try {
@@ -65,11 +65,11 @@
         }
     }
 
-    // Initial triggers shortly after page load
-    setTimeout(syncClans, 3000);
-    setTimeout(syncVillages, 5000);
+    // Initial triggers shortly after load
+    setTimeout(syncClans, 2000);
+    setTimeout(syncVillages, 4000);
 
-    // Continuous interval pollers
-    setInterval(syncClans, 15000);
-    setInterval(syncVillages, 30000);
+    // Turbo intervals: Clan every 5s, Arena every 10s
+    setInterval(syncClans, 5000);
+    setInterval(syncVillages, 10000);
 })();
