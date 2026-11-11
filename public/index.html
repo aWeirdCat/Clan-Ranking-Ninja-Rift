@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catologist's Ninja Rift Tracker</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            surface: {
+              base: '#09090c',
+              card: '#121217',
+              cardHover: '#17171e',
+              border: '#23232b',
+              borderHover: '#33333e',
+              input: '#0d0d12'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #09090c;
+      color: #f4f4f6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+
+    /* Pill Navigation Button */
+    .tab-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.45rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      line-height: 1rem;
+      font-weight: 600;
+      white-space: nowrap;
+      border: 1px solid #23232b;
+      background: #111116;
+      color: #9393a2;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .tab-btn:hover:not(.active) {
+      color: #ffffff;
+      background: #181820;
+      border-color: #353542;
+    }
+
+    .tab-btn.active {
+      color: #ffffff;
+      background: #1e1e28;
+      border-color: #4b4b5e;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.04);
+    }
+
+    /* Village Buttons (Color Coded) */
+    .village-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border: 1px solid #23232b;
+      background: #111116;
+      color: #8b8b99;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .village-btn[data-village="1"] .v-dot { background: #22c55e; }
+    .village-btn[data-village="1"]:hover, .village-btn[data-village="1"].active {
+      color: #4ade80; border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.1);
+    }
+
+    .village-btn[data-village="2"] .v-dot { background: #ef4444; }
+    .village-btn[data-village="2"]:hover, .village-btn[data-village="2"].active {
+      color: #f87171; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.1);
+    }
+
+    .village-btn[data-village="3"] .v-dot { background: #a855f7; }
+    .village-btn[data-village="3"]:hover, .village-btn[data-village="3"].active {
+      color: #c084fc; border-color: rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.1);
+    }
+
+    .village-btn[data-village="4"] .v-dot { background: #d97706; }
+    .village-btn[data-village="4"]:hover, .village-btn[data-village="4"].active {
+      color: #fbbf24; border-color: rgba(217, 119, 6, 0.4); background: rgba(217, 119, 6, 0.1);
+    }
+
+    .village-btn[data-village="5"] .v-dot { background: #38bdf8; }
+    .village-btn[data-village="5"]:hover, .village-btn[data-village="5"].active {
+      color: #60a5fa; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1);
+    }
+
+    /* Pin Button Styling */
+    .pin-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #4b4b5e;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    .pin-btn:hover {
+      color: #9393a2;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .pin-btn.pinned {
+      color: #e2f952 !important;
+      filter: drop-shadow(0 0 6px rgba(226, 249, 82, 0.5));
+    }
+
+    .pinned-row {
+      background: rgba(226, 249, 82, 0.03) !important;
+      border-left: 2px solid #e2f952 !important;
+    }
+
+    .ticking-num { transition: color 0.2s ease; }
+    .ticking-num.ticking { color: #34d399 !important; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans pb-24 selection:bg-zinc-800 selection:text-white">
+
+  <!-- ================= TOP HEADER ================= -->
+  <header class="sticky top-0 z-40 bg-[#09090c]/85 backdrop-blur-xl border-b border-[#23232b]/80 px-4 py-3">
+    <div class="max-w-5xl mx-auto flex items-center justify-between gap-3">
+      
+      <!-- Brand & Credits -->
+      <div class="flex items-center gap-2.5">
+        <span class="relative flex h-2.5 w-2.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.9)]"></span>
+        </span>
+        <div class="flex flex-col">
+          <h1 class="text-xs sm:text-sm font-bold tracking-wider text-white uppercase flex items-center">
+            Catologist's Ninja Rift Tracker
+          </h1>
+          <span class="text-[10px] text-zinc-500 font-mono tracking-normal">Credits to <span class="text-[#e2f952] font-semibold drop-shadow-[0_0_8px_rgba(226,249,82,0.6)]">@samhubmy</span></span>
+        </div>
+      </div>
+
+      <!-- Mode Switcher Tabs -->
+      <div class="flex items-center gap-2">
+        <span id="season-status-badge" class="hidden px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/25">
+          Season Concluded
+        </span>
+        <button class="tab-btn active" id="btn-clan" onclick="switchView('clan')">
+          <span class="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+          Clan Rankings
+        </button>
+        <button class="tab-btn" id="btn-arena" onclick="switchView('arena')">
+          <span class="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+          Arena Rankings
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto w-full px-4 pt-6 flex-1 flex flex-col">
+
+    <!-- Season Header & Countdown (Matching Official & Catologist Theme) -->
+    <div class="flex flex-col items-center justify-center text-center mb-6 pt-2">
+      <div class="flex items-center gap-2 mb-1">
+        <h2 id="season-title-display" class="text-xl sm:text-2xl font-bold tracking-tight text-white font-sans uppercase">
+          Season 67 Clan Ranking
+        </h2>
+      </div>
+      <div class="h-0.5 w-16 bg-gradient-to-r from-amber-500 to-emerald-400 rounded-full mb-5"></div>
+
+      <!-- Live 4-Block Countdown Timer -->
+      <div class="grid grid-cols-4 gap-2 sm:gap-3 max-w-sm sm:max-w-md w-full">
+        <!-- Days -->
+        <div class="bg-[#121217] border border-[#23232b] rounded-xl py-2.5 sm:py-3.5 px-2 flex flex-col items-center justify-center shadow-lg">
+          <span id="timer-days" class="text-lg sm:text-2xl font-bold text-white font-mono tracking-tight leading-none">20</span>
+          <span class="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider text-emerald-400 mt-1 font-semibold">Days</span>
+        </div>
+        <!-- Hours -->
+        <div class="bg-[#121217] border border-[#23232b] rounded-xl py-2.5 sm:py-3.5 px-2 flex flex-col items-center justify-center shadow-lg">
+          <span id="timer-hours" class="text-lg sm:text-2xl font-bold text-white font-mono tracking-tight leading-none">13</span>
+          <span class="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider text-emerald-400 mt-1 font-semibold">Hours</span>
+        </div>
+        <!-- Minutes -->
+        <div class="bg-[#121217] border border-[#23232b] rounded-xl py-2.5 sm:py-3.5 px-2 flex flex-col items-center justify-center shadow-lg">
+          <span id="timer-minutes" class="text-lg sm:text-2xl font-bold text-white font-mono tracking-tight leading-none">04</span>
+          <span class="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider text-emerald-400 mt-1 font-semibold">Minutes</span>
+        </div>
+        <!-- Seconds -->
+        <div class="bg-[#121217] border border-[#23232b] rounded-xl py-2.5 sm:py-3.5 px-2 flex flex-col items-center justify-center shadow-lg">
+          <span id="timer-seconds" class="text-lg sm:text-2xl font-bold text-white font-mono tracking-tight leading-none">21</span>
+          <span class="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider text-emerald-400 mt-1 font-semibold">Seconds</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arena Village Selector -->
+    <div id="village-bar" class="hidden flex-wrap items-center gap-2 mb-5 pb-3 border-b border-[#23232b]">
+      <span class="text-[11px] font-mono uppercase text-zinc-500 mr-1">Village:</span>
+      <button class="village-btn active" data-village="1" onclick="setVillage(1, this)">
+        <span class="v-dot w-2 h-2 rounded-full"></span>
+        Wind Village
+      </button>
+      <button class="village-btn" data-village="2" onclick="setVillage(2, this)">
+        <span class="v-dot w-2 h-2 rounded-full"></span>
+        Fire Village
+      </button>
+      <button class="village-btn" data-village="3" onclick="setVillage(3, this)">
+        <span class="v-dot w-2 h-2 rounded-full"></span>
+        Lightning Village
+      </button>
+      <button class="village-btn" data-village="4" onclick="setVillage(4, this)">
+        <span class="v-dot w-2 h-2 rounded-full"></span>
+        Earth Village
+      </button>
+      <button class="village-btn" data-village="5" onclick="setVillage(5, this)">
+        <span class="v-dot w-2 h-2 rounded-full"></span>
+        Water Village
+      </button>
+    </div>
+
+    <!-- Quick Stat KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+      <div class="bg-[#121217] border border-[#23232b] rounded-xl p-4 flex flex-col gap-1">
+        <span class="text-[10px] font-mono uppercase tracking-wider text-zinc-500" id="card-1-label">Rank 1 Clan</span>
+        <span class="text-base sm:text-lg font-bold text-white truncate font-sans" id="top-name">—</span>
+        <span class="text-xs font-mono text-zinc-400" id="top-sub">—</span>
+      </div>
+
+      <div class="bg-[#121217] border border-[#23232b] rounded-xl p-4 flex flex-col gap-1">
+        <span class="text-[10px] font-mono uppercase tracking-wider text-zinc-500">Fastest Gaining</span>
+        <span class="text-base sm:text-lg font-bold text-emerald-400 font-mono" id="fastest-rate">—</span>
+        <span class="text-xs text-zinc-400 truncate" id="fastest-name">—</span>
+      </div>
+
+      <div class="bg-[#121217] border border-[#23232b] rounded-xl p-4 flex flex-col gap-1">
+        <span class="text-[10px] font-mono uppercase tracking-wider text-zinc-500">Gap to Rank 1</span>
+        <span class="text-base sm:text-lg font-bold text-zinc-200 font-mono" id="top-gap">—</span>
+        <span class="text-xs text-zinc-500">Rank 2 difference</span>
+      </div>
+    </div>
+
+    <!-- Controls Row -->
+    <div class="flex items-center justify-between gap-3 mb-3">
+      <div class="flex items-center gap-2 w-full max-w-sm">
+        <input 
+          type="text" 
+          id="search" 
+          placeholder="Search..." 
+          oninput="filterData()"
+          class="w-full bg-[#121217] border border-[#23232b] focus:border-[#38bdf8] text-xs text-zinc-200 rounded-lg px-3 py-2 outline-none font-sans transition-colors placeholder:text-zinc-600"
+        />
+        <button 
+          id="btn-filter-pinned"
+          onclick="togglePinnedOnly()" 
+          title="Filter pinned only"
+          class="px-3 py-2 bg-[#121217] border border-[#23232b] hover:border-[#33333e] rounded-lg text-xs font-mono text-zinc-400 whitespace-nowrap transition-colors flex items-center gap-1.5"
+        >
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M16 9V4l1 0c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1l1 0v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/>
+          </svg>
+          <span id="pinned-count-badge">0</span>
+        </button>
+      </div>
+      <div class="text-[11px] font-mono text-zinc-500" id="last-updated">Connecting...</div>
+    </div>
+
+    <!-- Leaderboard Table -->
+    <div class="bg-[#121217] border border-[#23232b] rounded-xl overflow-hidden shadow-2xl overflow-x-auto">
+      <table class="w-full text-left text-xs border-collapse">
+        <thead id="table-head" class="bg-[#0e0e13] border-b border-[#23232b] text-[10px] font-mono uppercase tracking-wider text-zinc-500">
+          <!-- Dynamic -->
+        </thead>
+        <tbody id="ranking-body" class="divide-y divide-[#1c1c24]">
+          <tr>
+            <td colspan="7" class="p-8 text-center text-zinc-600 font-mono text-xs">Loading data...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <script>
+    let currentView = 'clan';
+    let currentVillageId = 1;
+
+    let clanStateMap = new Map();
+    let arenaStateMap = new Map();
+    let lastRenderedList = [];
+
+    // LocalStorage pinned sets
+    let pinnedClans = new Set(JSON.parse(localStorage.getItem('nr_pinned_clans') || '[]'));
+    let pinnedPlayers = new Set(JSON.parse(localStorage.getItem('nr_pinned_players') || '[]'));
+    let filterPinnedOnly = false;
+
+    function formatNumber(num) {
+      if (num === null || num === undefined) return '—';
+      return Math.floor(num).toLocaleString();
+    }
+
+    function formatGain(val) {
+      if (!val || val <= 0) return null;
+      if (val >= 10) return Math.round(val).toLocaleString();
+      return val.toFixed(1);
+    }
+
+    function togglePin(id, event) {
+      event.stopPropagation();
+      const set = currentView === 'clan' ? pinnedClans : pinnedPlayers;
+      const storageKey = currentView === 'clan' ? 'nr_pinned_clans' : 'nr_pinned_players';
+
+      const key = String(id);
+      if (set.has(key)) {
+        set.delete(key);
+      } else {
+        set.add(key);
+      }
+
+      localStorage.setItem(storageKey, JSON.stringify([...set]));
+      updatePinnedBadge();
+      updateRankingsAndRender();
+    }
+
+    function togglePinnedOnly() {
+      filterPinnedOnly = !filterPinnedOnly;
+      const btn = document.getElementById('btn-filter-pinned');
+      if (filterPinnedOnly) {
+        btn.classList.add('border-[#e2f952]', 'text-[#e2f952]');
+      } else {
+        btn.classList.remove('border-[#e2f952]', 'text-[#e2f952]');
+      }
+      filterData();
+    }
+
+    function updatePinnedBadge() {
+      const set = currentView === 'clan' ? pinnedClans : pinnedPlayers;
+      document.getElementById('pinned-count-badge').textContent = set.size;
+    }
+
+    function switchView(view) {
+      currentView = view;
+      document.getElementById('btn-clan').classList.toggle('active', view === 'clan');
+      document.getElementById('btn-arena').classList.toggle('active', view === 'arena');
+      
+      const vBar = document.getElementById('village-bar');
+      if (view === 'arena') {
+        vBar.classList.remove('hidden');
+        vBar.classList.add('flex');
+        document.getElementById('card-1-label').textContent = 'Rank 1 Fighter';
+      } else {
+        vBar.classList.add('hidden');
+        vBar.classList.remove('flex');
+        document.getElementById('card-1-label').textContent = 'Rank 1 Clan';
+      }
+
+      updatePinnedBadge();
+      renderTableHeader();
+      fetchCurrentData();
+    }
+
+    function setVillage(vid, btn) {
+      currentVillageId = vid;
+      document.querySelectorAll('.village-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      fetchArenaData();
+    }
+
+    function renderTableHeader() {
+      const thead = document.getElementById('table-head');
+      if (currentView === 'clan') {
+        thead.innerHTML = `
+          <tr>
+            <th class="py-3 px-3 w-8 text-center"></th>
+            <th class="py-3 px-3 w-10 text-center">Rank</th>
+            <th class="py-3 px-4">Clan</th>
+            <th class="py-3 px-4">Reputation</th>
+            <th class="py-3 px-4">Gain / sec</th>
+            <th class="py-3 px-4">Gain / min</th>
+            <th class="py-3 px-4">Gap to Above</th>
+          </tr>
+        `;
+      } else {
+        thead.innerHTML = `
+          <tr>
+            <th class="py-3 px-3 w-8 text-center"></th>
+            <th class="py-3 px-3 w-10 text-center">Rank</th>
+            <th class="py-3 px-4">Fighter</th>
+            <th class="py-3 px-4">Level</th>
+            <th class="py-3 px-4">Trophies</th>
+            <th class="py-3 px-4">Gain / sec</th>
+            <th class="py-3 px-4">Gain / min</th>
+            <th class="py-3 px-4">Gap to Above</th>
+          </tr>
+        `;
+      }
+    }
+
+    async function fetchClanData() {
+      try {
+        const res = await fetch('/api/live');
+        const json = await res.json();
+        if (json.clans && json.clans.length > 0) {
+          const badge = document.getElementById('season-status-badge');
+          if (json.season_ended) {
+            badge.classList.remove('hidden');
+            document.getElementById('last-updated').textContent = `Season Ended · Final Standings (${json.total_clans} clans)`;
+          } else {
+            badge.classList.add('hidden');
+            document.getElementById('last-updated').textContent = 
+              `Last sync: ${new Date(json.last_updated || Date.now()).toLocaleTimeString()} (${json.total_clans} clans)`;
+          }
+
+          json.clans.forEach(c => {
+            const existing = clanStateMap.get(c.clan_id);
+            const liveScore = existing ? Math.max(existing.currentLiveScore, c.reputation) : c.reputation;
+            const prevVel = existing ? existing.gainPerSec : c.gains.per_sec;
+
+            clanStateMap.set(c.clan_id, {
+              data: c,
+              currentLiveScore: liveScore,
+              gainPerSec: c.gains.per_sec || 0,
+              previousVelocity: prevVel
+            });
+          });
+
+          if (currentView === 'clan') updateRankingsAndRender();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function fetchArenaData() {
+      try {
+        const res = await fetch(`/api/live-arena?village_id=${currentVillageId}`);
+        const json = await res.json();
+        if (json.players) {
+          document.getElementById('last-updated').textContent = 
+            `Last sync: ${json.last_updated ? new Date(json.last_updated).toLocaleTimeString() : 'Waiting for sync...'} (${json.total_players} fighters)`;
+
+          arenaStateMap.clear();
+          json.players.forEach(p => {
+            arenaStateMap.set(p.player_id, {
+              data: p,
+              currentLiveScore: p.trophies,
+              gainPerSec: p.gains.tps || 0,
+              previousVelocity: p.gains.tps || 0
+            });
+          });
+
+          if (currentView === 'arena') updateRankingsAndRender();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function fetchCurrentData() {
+      if (currentView === 'clan') fetchClanData();
+      else fetchArenaData();
+    }
+
+    function tickLiveScore() {
+      const activeMap = currentView === 'clan' ? clanStateMap : arenaStateMap;
+      let changed = false;
+      for (const [id, item] of activeMap.entries()) {
+        if (item.gainPerSec > 0) {
+          item.currentLiveScore += item.gainPerSec;
+          changed = true;
+        }
+      }
+      if (changed || lastRenderedList.length === 0) {
+        updateRankingsAndRender(true);
+      }
+    }
+
+    function updateRankingsAndRender(isTick = false) {
+      const activeMap = currentView === 'clan' ? clanStateMap : arenaStateMap;
+      const sorted = Array.from(activeMap.values())
+        .sort((a, b) => b.currentLiveScore - a.currentLiveScore);
+
+      const itemsToRender = sorted.map((entry, idx) => {
+        const item = entry.data;
+        const currentScore = entry.currentLiveScore;
+        const prev = sorted[idx - 1];
+        const idKey = String(item.clan_id || item.player_id);
+        const isPinned = currentView === 'clan' ? pinnedClans.has(idKey) : pinnedPlayers.has(idKey);
+
+        return {
+          ...item,
+          rank: idx + 1,
+          liveScore: currentScore,
+          gainPerSec: entry.gainPerSec,
+          previousVelocity: entry.previousVelocity,
+          liveGapAbove: prev ? prev.currentLiveScore - currentScore : null,
+          aboveName: prev ? (prev.data.clan_name || prev.data.character_name) : null,
+          prevGainPerSec: prev ? prev.gainPerSec : 0,
+          isPinned: isPinned
+        };
+      });
+
+      // Pinned items bubble to top if desired, or keep original rank and pin at top of list
+      itemsToRender.sort((a, b) => {
+        if (a.isPinned === b.isPinned) return 0;
+        return a.isPinned ? -1 : 1;
+      });
+
+      lastRenderedList = itemsToRender;
+
+      if (sorted.length > 0) {
+        const first = sorted[0].data;
+        document.getElementById('top-name').textContent = first.clan_name || first.character_name;
+        document.getElementById('top-sub').textContent = `${formatNumber(sorted[0].currentLiveScore)} ${currentView === 'clan' ? 'rep' : 'trophies'}`;
+
+        const fastest = [...sorted].sort((a, b) => b.gainPerSec - a.gainPerSec)[0];
+        if (fastest && fastest.gainPerSec > 0) {
+          const gainText = formatGain(fastest.gainPerSec);
+          document.getElementById('fastest-rate').textContent = `+${gainText}/s`;
+          document.getElementById('fastest-name').textContent = fastest.data.clan_name || fastest.data.character_name;
+        } else {
+          document.getElementById('fastest-rate').textContent = '—';
+          document.getElementById('fastest-name').textContent = 'No current gain';
+        }
+
+        if (sorted.length > 1) {
+          const gap = sorted[0].currentLiveScore - sorted[1].currentLiveScore;
+          document.getElementById('top-gap').textContent = formatNumber(gap);
+        }
+      }
+
+      renderTable(itemsToRender, isTick);
+    }
+
+    function renderTable(list, isTick = false) {
+      const tbody = document.getElementById('ranking-body');
+      const search = document.getElementById('search').value.toLowerCase();
+      let filtered = list.filter(item => {
+        const name = item.clan_name || item.character_name || '';
+        const leader = item.leader_name || '';
+        return name.toLowerCase().includes(search) || leader.toLowerCase().includes(search);
+      });
+
+      if (filterPinnedOnly) {
+        filtered = filtered.filter(item => item.isPinned);
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-zinc-600 font-mono text-xs">No records found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => {
+        const idKey = item.clan_id || item.player_id;
+        let rankColor = 'text-zinc-500';
+        if (item.rank === 1) rankColor = 'text-amber-400 font-bold';
+        else if (item.rank === 2) rankColor = 'text-zinc-300 font-bold';
+        else if (item.rank === 3) rankColor = 'text-amber-600 font-bold';
+
+        let gapHtml = '';
+        if (item.rank === 1) {
+          gapHtml = `<span class="text-zinc-600 text-xs font-mono">None</span>`;
+        } else if (item.liveGapAbove !== null) {
+          let indicatorHtml = '';
+          
+          if (item.gainPerSec > item.prevGainPerSec) {
+            const catchupSec = Math.round(item.liveGapAbove / (item.gainPerSec - item.prevGainPerSec));
+            if (catchupSec > 0 && catchupSec < 7200) {
+              const mins = Math.floor(catchupSec / 60);
+              const secs = catchupSec % 60;
+              indicatorHtml = `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 mt-1">Overtaking in ~${mins > 0 ? mins + 'm ' : ''}${secs}s</span>`;
+            }
+          } else if (item.prevGainPerSec > item.gainPerSec && item.gainPerSec > 0) {
+            indicatorHtml = `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-red-500/10 text-red-400 border border-red-500/20 mt-1">Slowing down</span>`;
+          }
+
+          gapHtml = `
+            <div class="flex flex-col">
+              <span class="font-mono text-zinc-300">-${formatNumber(item.liveGapAbove)}</span>
+              <span class="text-[11px] text-zinc-500">behind ${item.aboveName || 'Rank Above'}</span>
+              ${indicatorHtml}
+            </div>
+          `;
+        }
+
+        const tickClass = (isTick && item.gainPerSec > 0) ? 'ticking' : '';
+        const formattedSec = formatGain(item.gainPerSec);
+        const secGainHtml = formattedSec 
+          ? `<span class="px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">+${formattedSec}/s</span>`
+          : `<span class="text-zinc-600 font-mono">—</span>`;
+
+        const minVal = item.gains ? (item.gains.per_min || item.gains.tpm || 0) : 0;
+        const minGainHtml = minVal > 0 
+          ? `<span class="px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">+${Math.round(minVal).toLocaleString()}/m</span>`
+          : `<span class="text-zinc-600 font-mono">—</span>`;
+
+        const pinClass = item.isPinned ? 'pinned' : '';
+        const rowClass = item.isPinned ? 'pinned-row' : 'hover:bg-[#16161d]';
+
+        const pinBtnHtml = `
+          <button class="pin-btn ${pinClass}" onclick="togglePin('${idKey}', event)" title="${item.isPinned ? 'Unpin' : 'Pin to top'}">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16 9V4l1 0c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1l1 0v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/>
+            </svg>
+          </button>
+        `;
+
+        if (currentView === 'clan') {
+          const logoUrl = item.clan_logo 
+            ? `https://ninjarift.sgp1.cdn.digitaloceanspaces.com/png/${item.clan_logo}.png`
+            : 'https://playninjarift.com/logo192.png';
+
+          return `
+            <tr class="${rowClass} transition-colors">
+              <td class="py-3 px-3 text-center">${pinBtnHtml}</td>
+              <td class="py-3 px-3 text-center font-mono ${rankColor}">${item.rank}</td>
+              <td class="py-3 px-4">
+                <div class="flex items-center gap-3">
+                  <img class="w-8 h-8 rounded-lg bg-[#1a1a24] object-contain border border-[#23232b]" src="${logoUrl}" onerror="this.src='https://playninjarift.com/logo192.png'" alt="">
+                  <div>
+                    <div class="font-semibold text-zinc-200 text-xs sm:text-sm flex items-center gap-1.5">
+                      ${item.clan_name}
+                      ${item.isPinned ? '<span class="text-[9px] font-mono font-semibold text-[#e2f952] px-1 rounded bg-[#e2f952]/10">PINNED</span>' : ''}
+                    </div>
+                    <div class="text-[11px] text-zinc-500">Leader: ${item.leader_name || 'Unknown'}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="py-3 px-4 font-mono font-bold text-zinc-200 text-xs sm:text-sm">
+                <span class="ticking-num ${tickClass}">${formatNumber(item.liveScore)}</span>
+              </td>
+              <td class="py-3 px-4">${secGainHtml}</td>
+              <td class="py-3 px-4">${minGainHtml}</td>
+              <td class="py-3 px-4">${gapHtml}</td>
+            </tr>
+          `;
+        } else {
+          return `
+            <tr class="${rowClass} transition-colors">
+              <td class="py-3 px-3 text-center">${pinBtnHtml}</td>
+              <td class="py-3 px-3 text-center font-mono ${rankColor}">${item.rank}</td>
+              <td class="py-3 px-4">
+                <div class="font-semibold text-zinc-200 text-xs sm:text-sm flex items-center gap-1.5">
+                  ${item.character_name}
+                  ${item.isPinned ? '<span class="text-[9px] font-mono font-semibold text-[#e2f952] px-1 rounded bg-[#e2f952]/10">PINNED</span>' : ''}
+                </div>
+              </td>
+              <td class="py-3 px-4 font-mono text-zinc-400 text-xs">Lv. ${item.character_level || 1}</td>
+              <td class="py-3 px-4 font-mono font-bold text-zinc-200 text-xs sm:text-sm">
+                <span class="ticking-num ${tickClass}">${formatNumber(item.liveScore)}</span>
+              </td>
+              <td class="py-3 px-4">${secGainHtml}</td>
+              <td class="py-3 px-4">${minGainHtml}</td>
+              <td class="py-3 px-4">${gapHtml}</td>
+            </tr>
+          `;
+        }
+      }).join('');
+    }
+
+    function filterData() {
+      renderTable(lastRenderedList);
+    }
+
+    function updateCountdown() {
+      const targetTime = new Date('2026-11-29T06:00:00.000Z').getTime();
+      const diff = Math.max(0, targetTime - Date.now());
+
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((diff / (1000 * 60)) % 60);
+      const s = Math.floor((diff / 1000) % 60);
+
+      document.getElementById('timer-days').textContent = String(d).padStart(2, '0');
+      document.getElementById('timer-hours').textContent = String(h).padStart(2, '0');
+      document.getElementById('timer-minutes').textContent = String(m).padStart(2, '0');
+      document.getElementById('timer-seconds').textContent = String(s).padStart(2, '0');
+    }
+
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    updatePinnedBadge();
+    renderTableHeader();
+    fetchCurrentData();
+    setInterval(fetchCurrentData, 5000);
+    setInterval(tickLiveScore, 1000);
+  </script>
+</body>
+</html>
